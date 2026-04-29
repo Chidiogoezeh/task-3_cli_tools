@@ -1,10 +1,8 @@
 import axios from "axios";
 import { getCredentials, saveCredentials } from "./storage.js";
 
-const API_URL = process.env.INSIGHTA_BACKEND_URL || "http://localhost:3000";
-
 const api = axios.create({
-  baseURL: process.env.BACKEND_URL,
+  baseURL: process.env.BACKEND_URL || "https://task-3backendcore-production.up.railway.app", 
   headers: {
     "X-API-Version": "1",
     "Content-Type": "application/json"
@@ -19,7 +17,7 @@ api.interceptors.request.use((config) => {
         config.headers.Authorization = `Bearer ${creds.accessToken}`;
     }
   } catch (e) {
-    // Silent fail for unauthenticated requests
+    console.error("Debug Auth Header Error:", e.message);
   }
   return config;
 });
