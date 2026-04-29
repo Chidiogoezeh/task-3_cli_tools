@@ -42,7 +42,7 @@ export const exportData = async (options) => {
   try {
     const res = await api.get("/api/profiles/export", { 
       params: { format: "csv" },
-      responseType: "blob" 
+      responseType: "arraybuffer" 
     });
     const filename = `profiles_${Date.now()}.csv`;
     fs.writeFileSync(filename, res.data);
