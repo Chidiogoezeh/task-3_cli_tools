@@ -4,9 +4,9 @@ import { getCredentials, saveCredentials } from "./storage.js";
 const API_URL = process.env.INSIGHTA_BACKEND_URL || "http://localhost:3000";
 
 const api = axios.create({
-  baseURL: API_URL,
+  baseURL: process.env.BACKEND_URL,
   headers: {
-    "X-API-Version": "1", // Strict Requirement
+    "X-API-Version": "1",
     "Content-Type": "application/json"
   }
 });
