@@ -13,42 +13,32 @@ export const login = async () => {
   const code_challenge = crypto.createHash("sha256").update(code_verifier).digest("base64url");
   const state = crypto.randomBytes(16).toString("hex");
 
-  // CRITICAL: We must "prime" the backend with the challenge so it can verify it later
   try {
     await api.post("/auth/pkce-init", { state, code_challenge });
-  } catch (err) {
-    spinner.fail(chalk.red("Failed to initialize PKCE session with backend."));
-    return;
-  }
-
-  // Point to your deployed backend URL
-  const authUrl = `${process.env.BACKEND_URL}/auth/github?state=${state}`;
-
-  try {
-    await open(authUrl);
-    // TRD Requirement: Use port 4856
-    const callbackData = await startCallbackServer(4856); 
     
-    spinner.text = "Exchanging code for tokens...";
-    const res = await api.get("/auth/github/callback", {
-      params: { 
-        code: callbackData.code, 
-        state: callbackData.state, 
-        code_verifier 
-      }
+    // The redirect_uri in GitHub is now ALWAYS the backend
+    const authUrl = `${process.env.BACKEND_URL}/auth/github?state=${state}`;
+    await open(authUrl);
+
+    // This now resolves with the TOKENS directly
+    const tokens = await startCallbackServer(4856); 
+    
+    spinner.text = "Finalizing session...";
+    
+    // Save tokens received from the callback server
+    saveCredentials({
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken
     });
 
-    saveCredentials(res.data); 
     const userRes = await api.get("/auth/whoami");
-    const credentialsWithUser = { ...res.data, user: userRes.data.user };
-    saveCredentials(credentialsWithUser);
+    saveCredentials({ ...tokens, user: userRes.data.user });
 
     spinner.succeed(chalk.green(`Logged in successfully as @${userRes.data.user.username}`));
   } catch (err) {
     spinner.fail(chalk.red(`Login failed: ${err.message}`));
   }
 };
-
 export const logout = () => {
   clearCredentials();
   console.log(chalk.yellow("Logged out and credentials cleared."));

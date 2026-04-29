@@ -6,15 +6,16 @@ export const startCallbackServer = (port) => {
     const server = http.createServer((req, res) => {
       const query = url.parse(req.url, true).query;
       
-      if (query.code) {
-        res.writeHead(200, { "Content-Type": "text/html" });
-        res.end("<h1>Login Successful!</h1><p>You can close this window and return to the CLI.</p>");
+      if (query.accessToken) {
+        res.writeHead(200, { "Content-Type": "text/plain" });
+        res.end("Login Successful! You can close this window and return to the CLI.");
         server.close();
-        resolve(query); // Returns code and state
+        resolve(query); // Returns the actual tokens: accessToken, refreshToken, etc.
       } else {
-        res.writeHead(400);
-        res.end("Authentication failed.");
-        reject(new Error("No code received"));
+        res.writeHead(400, { "Content-Type": "text/plain" });
+        res.end("Authentication failed: No tokens received.");
+        server.close();
+        reject(new Error("No tokens received"));
       }
     }).listen(port);
   });
