@@ -5,6 +5,8 @@ import * as profileCmds from "../src/commands/profiles.js";
 
 import "dotenv/config";
 
+console.log("DEBUG: Client ID is:", process.env.GITHUB_CLIENT_ID);
+
 const program = new Command();
 
 program

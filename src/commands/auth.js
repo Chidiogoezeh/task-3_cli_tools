@@ -13,16 +13,29 @@ export const login = async () => {
   const code_challenge = crypto.createHash("sha256").update(code_verifier).digest("base64url");
   const state = crypto.randomBytes(16).toString("hex");
 
-  const authUrl = `https://github.com/login/oauth/authorize?client_id=${process.env.GITHUB_CLIENT_ID}&state=${state}&code_challenge=${code_challenge}&code_challenge_method=S256`;
+  // CRITICAL: We must "prime" the backend with the challenge so it can verify it later
+  try {
+    await api.post("/auth/pkce-init", { state, code_challenge });
+  } catch (err) {
+    spinner.fail(chalk.red("Failed to initialize PKCE session with backend."));
+    return;
+  }
+
+  // Point to your deployed backend URL
+  const authUrl = `${process.env.BACKEND_URL}/auth/github?state=${state}`;
 
   try {
     await open(authUrl);
-    const callbackData = await startCallbackServer(process.env.CLI_CALLBACK_PORT || 4567); 
+    // TRD Requirement: Use port 4856
+    const callbackData = await startCallbackServer(4856); 
     
     spinner.text = "Exchanging code for tokens...";
-    // Using GET with params to match Backend Controller (req.query)
     const res = await api.get("/auth/github/callback", {
-      params: { code: callbackData.code, code_verifier, state }
+      params: { 
+        code: callbackData.code, 
+        state: callbackData.state, 
+        code_verifier 
+      }
     });
 
     saveCredentials(res.data); 
